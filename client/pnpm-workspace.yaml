@@ -14,3 +14,6 @@ allowBuilds:
 overrides:
   devalue: '^5.9.3'
   source-map-js: '>=1.2.2'
+
+minimumReleaseAgeExclude:
+  - '@sveltejs/adapter-vercel@6.3.5'
