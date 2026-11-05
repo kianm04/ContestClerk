@@ -1,0 +1,16 @@
+allowBuilds:
+  esbuild: true
+
+# Floors for packages we only get through other packages, each with the version
+# that closes a published advisory. `pnpm audit --prod --audit-level=high` in
+# `pnpm verify` fails the build if one slips back below its floor. Remove a line
+# once the package that pulls it in asks for the fixed version itself.
+#
+#   devalue        shared-memory serialisation, quadratic expansion and reviver
+#                  advisories in <=5.9.2 (GHSA-j22f-vq7h-c4qm and three more);
+#                  it comes in through svelte.
+#   source-map-js  event-loop denial of service in <1.2.2 (GHSA-68fv-2mgg-jv7q);
+#                  it comes in through sanitize-html via postcss.
+overrides:
+  devalue: '^5.9.3'
+  source-map-js: '>=1.2.2'

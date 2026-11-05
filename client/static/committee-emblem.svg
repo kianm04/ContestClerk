@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+	<!-- The neutral committee emblem (T149). A plain globe in a seal: not the United Nations emblem, whose use General Assembly resolution 92(I) restricts. -->
+	<circle cx="32" cy="32" r="32" fill="#0b2a5b"/>
+	<circle cx="32" cy="32" r="27" fill="none" stroke="#dbeafe" stroke-width="1.5"/>
+	<g fill="none" stroke="#ffffff" stroke-width="2">
+		<circle cx="32" cy="32" r="17"/>
+		<ellipse cx="32" cy="32" rx="7.5" ry="17"/>
+		<path d="M32 15 V49"/>
+		<path d="M15 32 H49"/>
+		<path d="M18.5 23 H45.5"/>
+		<path d="M18.5 41 H45.5"/>
+	</g>
+</svg>

@@ -1,0 +1,126 @@
+# The site as it runs on this machine and on munmeet.umarbek.dev: the SvelteKit app, and
+# the Cloudflare tunnel that publishes it without opening a port on the router.
+#
+#   pnpm --dir client db:start        # once, the local Supabase in Docker
+#   docker compose up -d --build      # here, the app and the tunnel
+#
+# The Supabase stack is not started here, because the Supabase CLI owns it. This
+# file joins the network that CLI created so the tunnel can reach it; see the
+# `networks` block at the bottom.
+#
+# Settings live in `.env` beside this file, copied from `.env.example`.
+
+services:
+  mymun:
+    container_name: mymun
+    build:
+      context: ./client
+      args:
+        # Compiled into the app rather than read when it starts. The Dockerfile
+        # explains why, and why the address has to be a public one.
+        PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:?set PUBLIC_SUPABASE_URL in .env}
+        PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${PUBLIC_SUPABASE_PUBLISHABLE_KEY:?set PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env}
+    environment:
+      # HTTP does not tell a server the address the visitor typed, so the
+      # adapter has to be told. Without this, every form on the site fails with
+      # "Cross-site POST form submissions are forbidden", and the confirmation
+      # links in our sign-up emails point at the wrong host. The tunnel in front
+      # of us is trusted, but naming the origin outright is simpler than
+      # trusting its forwarded headers.
+      ORIGIN: ${ORIGIN:?set ORIGIN in .env}
+      # Read while the server runs, through `$$env/dynamic/private`, so unlike
+      # the build arguments above these can change without a rebuild. Left
+      # empty, the Stripe pages say Stripe is not set up on this server, which
+      # is how every development machine runs today.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    # `expose` rather than `ports`: reachable from the tunnel container, and not
+    # from the host or the network this machine sits on.
+    expose:
+      - '3000'
+    networks:
+      - umbrella
+    healthcheck:
+      # A file out of `static/`, on purpose. Asking for a real page would call
+      # the database, and then a Supabase restart would mark the app unhealthy
+      # when the app itself is fine.
+      #
+      # `127.0.0.1` rather than `localhost`, because inside the container
+      # `localhost` resolves to the IPv6 address `::1` first and the server
+      # listens on IPv4 only, so `localhost` fails with "Connection refused"
+      # while the app is perfectly healthy.
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/robots.txt || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  tunnel:
+    container_name: tunnel
+    # A release tag and its digest rather than `latest`. This container holds
+    # TUNNEL_TOKEN, and a tag that moves would run whatever Docker Hub serves
+    # under it on the next pull, with the token. The digest is the manifest
+    # list's, which `docker buildx imagetools inspect cloudflare/cloudflared:2026.8.3`
+    # prints and which covers arm64 and amd64 alike; `docker images --digests`
+    # shows the same value for the image pulled on this machine. To move to a
+    # newer release, change the tag and the digest together.
+    image: cloudflare/cloudflared:2026.8.3@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
+    # A "remotely-managed" tunnel: which hostname goes to which container is set
+    # on the tunnel's page in the Cloudflare dashboard, not in a file in this
+    # repository. cloudflared downloads those rules using the token below, so
+    # there is no config file and no credentials file to mount here.
+    #
+    # The dashboard has to name the containers as Docker sees them, because
+    # cloudflared is looking out from inside this network:
+    #
+    #   munmeet.umarbek.dev          ->  http://mymun:3000
+    #   supabase-munmeet.umarbek.dev ->  http://supabase_kong_munmeet:8000
+    #
+    # `localhost` in the dashboard would mean the tunnel container itself, where
+    # nothing is listening, and shows up as HTTP 502.
+    #
+    # The flags belong between `tunnel` and `run`, which is how cloudflared
+    # orders them. `--metrics` is what serves the readiness check described
+    # below. The token is not given as a flag, so that it stays out of the
+    # process list; cloudflared reads TUNNEL_TOKEN on its own.
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    networks:
+      # Two networks, because the tunnel forwards two hostnames: the app on
+      # `umbrella`, and Supabase on the network the Supabase CLI made.
+      - umbrella
+      - supabase
+    # Only that the container exists, not that it is healthy. cloudflared keeps
+    # retrying an origin that is not answering yet, and waiting for health here
+    # would take the whole site offline for a slow start-up.
+    depends_on:
+      - mymun
+    # cloudflared's readiness is checked from this machine instead of from a
+    # healthcheck, because the image holds the one binary and nothing else: no
+    # shell and no wget, so every `test:` here would fail whatever the tunnel
+    # was doing. `--metrics 0.0.0.0:2000` above serves the answer and this line
+    # brings it to the host, bound to the loopback address so that only this
+    # machine can read it:
+    #
+    #   curl -s localhost:2000/ready
+    #
+    # It reports 200 and the number of connections when the tunnel is up. The
+    # container log says the same thing in words.
+    ports:
+      - '127.0.0.1:2000:2000'
+    restart: unless-stopped
+
+networks:
+  # Private to the two containers above. Nothing is published on the host, so
+  # the tunnel is the only way in to the app.
+  umbrella:
+    driver: bridge
+
+  # Created by `pnpm db:start`, not by this file, which is what `external` says.
+  # `docker compose up` fails with "network supabase_network_munmeet not found"
+  # if the Supabase stack is not running yet.
+  supabase:
+    external: true
+    name: supabase_network_munmeet

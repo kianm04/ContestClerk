@@ -1,0 +1,833 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+/*
+	The two fonts, served from this site rather than from Google Fonts: nothing is
+	fetched from a third party and the words never swap font after they appear.
+	Both are variable fonts, so one file covers every weight. The serif's `opsz`
+	file also carries its optical sizes, which the `body` rule below pins.
+*/
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource-variable/source-serif-4/opsz.css';
+/*
+	Inter, the sans the steps of creating a conference are drawn in (Trello
+	fe3reN7Y): the product owner's designs for those pages set it rather than IBM
+	Plex Sans. Only `.creation-root`, at the end of this file, switches to it.
+*/
+@import '@fontsource-variable/inter';
+/*
+	shadcn-svelte components write `dark:` classes. This ties that variant to a
+	`.dark` class on the root element, which nothing ever sets: the design has no
+	dark mode (docs/DESIGN.md), so those classes never apply.
+*/
+@custom-variant dark (&:is(.dark *));
+@plugin '@tailwindcss/forms';
+
+/*
+	`@theme` is how Tailwind 4 is configured: there is no `tailwind.config.js` any
+	more. Every variable declared here becomes a utility class, so
+	`--color-brand-700` gives us `bg-brand-700`, `text-brand-700`, `border-brand-700`
+	and so on. Components always use these names and never a raw hex value, so that
+	changing a colour here changes it everywhere.
+
+	The choices come from `docs/DESIGN.md`. The shadcn-svelte theme variables that
+	components read (`--primary`, `--border`, ...) are set in `:root` at the end of
+	this file; the tokens below are the older set the site still uses while it is
+	being ported.
+*/
+@theme {
+	/*
+		The palette is locked to four colours, each with one job (design-system.md,
+		"Colour"): dark blue, light blue, black and white.
+
+		Dark blue is the brand and the one action that matters: primary buttons,
+		the logo, the selected navigation item and the serif titles of site pages.
+		`brand-800` is a primary button under the pointer.
+	*/
+	--color-brand-900: #0b2a5b;
+	--color-brand-800: #173b73;
+	/*
+		Light blue is signal and space. `brand-500` is the logo's light blue
+		exactly (Trello IMIgApjR), but white or a pale ground beside it gives only
+		about 3:1, too little for words. So it only draws shapes that carry no
+		text: lines, bars, dots, focus rings and the active navigation underline.
+		`brand-700` is the same hue made deep enough for words on white and on
+		`ground` to reach the 4.5:1 WCAG AA asks for, so links use it. It is not
+		deep enough on `brand-100`, where words are `brand-900` instead.
+	*/
+	--color-brand-700: #006fcc;
+	--color-brand-500: #0098fc;
+	--color-brand-100: #d9eeff;
+	--color-brand-50: #eef7ff;
+
+	/*
+		Black, for everything people read. `ink-900` is body text, `ink-600`
+		secondary text, `ink-400` placeholders. The greys are neutral rather than
+		blue-grey, so black reads as its own colour next to dark blue.
+	*/
+	--color-ink-900: #111318;
+	--color-ink-600: #545a63;
+	--color-ink-400: #9aa0a9;
+
+	/*
+		Surfaces: `surface` is a card or an input. `ground` is the pale blue the
+		page used to be painted on; the page is white now (`--background`).
+	*/
+	--color-line: #e3e6eb;
+	--color-ground: #eef7ff;
+	--color-surface: #ffffff;
+
+	/* Status colours. The `-700` is the text, the `-100` the background behind it. */
+	--color-success-700: #15803d;
+	--color-success-100: #dcfce7;
+	--color-warning-700: #b45309;
+	--color-warning-100: #fef3c7;
+	--color-danger-700: #b91c1c;
+	--color-danger-100: #fee2e2;
+	--color-neutral-700: #3a3f47;
+	--color-neutral-100: #f3f4f6;
+
+	/*
+		The violet of one conference card's committee chips in three, after the
+		directory's mockup (Trello WMcXfry0). The other two use `success` and
+		`brand`. 700 on 100 reads at about 7 to 1.
+	*/
+	--color-violet-700: #5b3fa8;
+	--color-violet-100: #f1effc;
+
+	/*
+		The warm brown of "For organisers" over the sunlit desk at the top of the
+		landing page, after its mockup (Trello RBz46aTQ). It reads at about 5.6 to
+		1 on the cream of that picture, and is used nowhere else.
+	*/
+	--color-sand-700: #7a5c3e;
+
+	/*
+		The faint blue-white of the landing page under its pictures, where the
+		example's white cards sit (Trello RBz46aTQ). It is halfway between
+		`surface` and `ground`, and is used nowhere else.
+	*/
+	--color-mist: #f7fbfe;
+
+	/*
+		Brighter status colours for shapes that carry no words, such as the filled
+		circles and the progress line on the cards at `/applications`, which the
+		mockup draws in a vivid green, orange and red. Each reaches the 3:1 against
+		white that WCAG asks of a shape, but not the 4.5:1 words need, so words
+		keep the `-700`, the way `brand-500` only ever draws lines.
+	*/
+	--color-success-500: #16a34a;
+	--color-warning-500: #ea580c;
+	--color-danger-500: #dc2626;
+
+	/*
+		The two fonts, imported at the top of this file. The names after the first
+		one are the fallbacks the browser uses if a font file fails to arrive.
+	*/
+	--font-display: 'Source Serif 4 Variable', Georgia, serif;
+	--font-sans: 'IBM Plex Sans Variable', system-ui, sans-serif;
+
+	/*
+		The type scale. A `--text-*` variable gives a `text-*` class that sets the
+		size, and the `--line-height`, `--font-weight` and `--letter-spacing` parts
+		below each one come with it, so `text-h2` sets all three at once.
+
+		Display and H1 are smaller on a phone. Tailwind cannot put two sizes in one
+		variable, so each has a `-mobile` twin and the markup writes
+		`text-display-mobile md:text-display`.
+
+		The sizes are in rem, not px, so they grow and shrink with the root font
+		size that `html` sets under `@layer base` below. At the browser's own 16px
+		root, 1rem is 16px, so 2.75rem is 44px.
+	*/
+	--text-display: 2.75rem;
+	--text-display--line-height: 3rem;
+	--text-display--font-weight: 600;
+	--text-display-mobile: 2rem;
+	--text-display-mobile--line-height: 2.25rem;
+	--text-display-mobile--font-weight: 600;
+
+	/*
+		The headline the conference directory had, "Find your next MUN experience."
+		The mockup draws it larger than `display` and in the font's regular weight
+		(Trello WMcXfry0), which `app.html` loads for this headline and the line
+		under it. A phone keeps `display-mobile`. The product owner then asked for
+		the headline to go (Trello VtIlOpkB), so only the style guide shows it now.
+	*/
+	--text-hero: 3rem;
+	--text-hero--line-height: 3.25rem;
+	--text-hero--font-weight: 400;
+
+	/* The line at the top of the conference directory, smaller than `h2` and in the same weight. */
+	--text-hero-lead: 1.125rem;
+	--text-hero-lead--line-height: 1.375rem;
+	--text-hero-lead--font-weight: 400;
+
+	/*
+		The two headlines at the top of the landing page from `lg` up, "Join
+		conferences that shape you." and "Create conferences that make an
+		impact." The mockup sets them in medium weight, lines as close as the
+		letters are tall (Trello RBz46aTQ). A phone keeps `display-mobile`.
+	*/
+	--text-pitch: 2.875rem;
+	--text-pitch--line-height: 2.875rem;
+	--text-pitch--font-weight: 500;
+
+	/*
+		The landing page's last heading from `lg` up, "Ready to be part of
+		something bigger?", in the same medium weight as `pitch` and smaller than
+		`h1`, as the mockup draws it (Trello RBz46aTQ).
+	*/
+	--text-closing: 1.8rem;
+	--text-closing--line-height: 2.25rem;
+	--text-closing--font-weight: 500;
+
+	/*
+		The greeting on `/home` from a tablet up. The mockup drew it larger than
+		`display` (Trello oWFN9aQb); the product owner then found the band too big
+		and asked twice for a smaller one (Trello fSjIw4gG), so it is now as big
+		as `h1`. It keeps its own token so that the home page's greeting can change
+		again without every other page's heading changing with it. A phone keeps
+		`display-mobile`, which is the same 32px.
+	*/
+	--text-greeting: 2rem;
+	--text-greeting--line-height: 2.5rem;
+	--text-greeting--font-weight: 600;
+
+	--text-h1: 2rem;
+	--text-h1--line-height: 2.5rem;
+	--text-h1--font-weight: 600;
+	--text-h1-mobile: 1.625rem;
+	--text-h1-mobile--line-height: 2rem;
+	--text-h1-mobile--font-weight: 600;
+
+	--text-h2: 1.375rem;
+	--text-h2--line-height: 1.75rem;
+	--text-h2--font-weight: 600;
+
+	--text-h3: 1rem;
+	--text-h3--line-height: 1.5rem;
+	--text-h3--font-weight: 600;
+
+	--text-body: 0.9375rem;
+	--text-body--line-height: 1.5rem;
+	--text-body--font-weight: 400;
+
+	--text-small: 0.8125rem;
+	--text-small--line-height: 1.25rem;
+	--text-small--font-weight: 400;
+
+	/*
+		The organiser's management pages (the manage redesign), which hold more on
+		one screen than the rest of the app: sidebar links, table cells, tabs and
+		the compact buttons. One step between `text-small` and `text-body`.
+	*/
+	--text-dense: 0.875rem;
+	--text-dense--line-height: 1.25rem;
+	--text-dense--font-weight: 400;
+
+	/* The figures in the stat strip along the top of a management dashboard. */
+	--text-stat: 1.625rem;
+	--text-stat--line-height: 2rem;
+	--text-stat--font-weight: 600;
+	--text-stat--letter-spacing: -0.01em;
+
+	/* The serif title at the top of every management page, the same on a phone. */
+	--text-manage-title: 1.875rem;
+	--text-manage-title--line-height: 2.375rem;
+	--text-manage-title--font-weight: 600;
+	--text-manage-title--letter-spacing: -0.01em;
+
+	/* Form labels, table headers and eyebrows. Always written in capitals as well. */
+	--text-label: 0.8125rem;
+	--text-label--line-height: 1rem;
+	--text-label--font-weight: 500;
+	--text-label--letter-spacing: 0.04em;
+
+	/*
+		The small print of the example on the landing page, whose cards draw the
+		product smaller than it really is (Trello RBz46aTQ), and the quiet group
+		headings in the management sidebar (the manage redesign). Nothing that can
+		be pressed uses it.
+	*/
+	--text-caption: 0.75rem;
+	--text-caption--line-height: 1rem;
+	--text-caption--font-weight: 400;
+
+	/* Inputs and buttons. Cards and modals use Tailwind's own `rounded-2xl` (16px). */
+	--radius-control: 0.625rem;
+
+	/* The only shadow in the design: hovering a clickable card, and floating things. */
+	--shadow-card: 0 8px 24px rgba(15, 23, 42, 0.08);
+	/*
+		The same shadow, twice as dark, under the one thing on the "For
+		organisers" page that is drawn lifted off its card: a delegate being
+		dragged onto a seat in the drawn seat grid.
+	*/
+	--shadow-lift: 0 8px 24px rgba(15, 23, 42, 0.16);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-chart-5: var(--chart-5);
+	--color-chart-4: var(--chart-4);
+	--color-chart-3: var(--chart-3);
+	--color-chart-2: var(--chart-2);
+	--color-chart-1: var(--chart-1);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--color-link: var(--link);
+	--color-selected: var(--selected);
+	--color-placeholder: var(--placeholder);
+	--color-success: var(--success);
+	--color-success-muted: var(--success-muted);
+	--color-warning: var(--warning);
+	--color-warning-muted: var(--warning-muted);
+	--color-destructive-muted: var(--destructive-muted);
+	/*
+		shadcn-svelte sizes its corners from `--radius`, set in `:root` below as the
+		6px of a button or field. `rounded-xl`, which its menus and dialogs use, is
+		pinned to the 10px docs/DESIGN.md gives floating panels. Nothing is larger.
+	*/
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: 0.625rem;
+	--radius-2xl: 0.625rem;
+	--radius-3xl: 0.625rem;
+	--radius-4xl: 0.625rem;
+
+	/*
+		The steps of creating a conference (Trello fe3reN7Y) are drawn one to one
+		from the product owner's designs, whose palette is a blue-grey ink on pale
+		blue surfaces that the rest of the site does not use. Every colour those
+		pages need is named here, so that their markup names tokens and never a hex
+		value, and nothing outside `/create` reaches for them. The `.creation-root`
+		rule at the end of this file points the shadcn variables at them too.
+	*/
+	--font-creation: 'Inter Variable', system-ui, sans-serif;
+
+	/* Surfaces: the page, the hairlines and the pale blue tints. */
+	--color-creation-page: #f7fbfe;
+	--color-creation-panel-border: #e9eef5;
+	--color-creation-card-border: #eaeef4;
+	--color-creation-input-border: #e2e8f4;
+	--color-creation-button-border: #e3e9f0;
+	--color-creation-rule: #eef2f7;
+	--color-creation-step-border: #dee6f1;
+	--color-creation-connector: #dbe2ef;
+	--color-creation-track: #d8e3f4;
+	--color-creation-radio-border: #d8dfeb;
+	--color-creation-tint: #ecf5fe;
+	--color-creation-note: #eef7fe;
+	--color-creation-selected: #f1f8fe;
+	--color-creation-pill: #e9f4fe;
+	--color-creation-pill-soft: #ebf5fe;
+	--color-creation-hover: #e2effe;
+	--color-creation-field: #f4f6fa;
+	--color-creation-overlay: rgba(15, 23, 42, 0.52);
+
+	/* The design's blue: filled buttons, the current step, links and selected borders. */
+	--color-creation-blue: #0065fd;
+	--color-creation-blue-hover: #0052d6;
+	--color-creation-blue-border: #1863fe;
+	--color-creation-blue-text: #1154fc;
+	--color-creation-blue-pill: #1a6ff3;
+	--color-creation-blue-deep: #2b53ad;
+	--color-creation-blue-focus: #4a90fe;
+
+	/* Ink: the blue-grey text scale, darkest first. 950 is headings and values, 500 the line under a title, 350 a panel's description, 225 help text. */
+	--color-creation-ink-950: #0a0f38;
+	--color-creation-ink-900: #101854;
+	--color-creation-ink-800: #1f3a8a;
+	--color-creation-ink-700: #384b81;
+	--color-creation-ink-650: #445689;
+	--color-creation-ink-600: #45598f;
+	--color-creation-ink-550: #495b8b;
+	--color-creation-ink-500: #546394;
+	--color-creation-ink-450: #5c6a95;
+	--color-creation-ink-400: #616d97;
+	--color-creation-ink-375: #68759b;
+	--color-creation-ink-350: #6d7ba0;
+	--color-creation-ink-325: #6f7ea6;
+	--color-creation-ink-300: #7082b0;
+	--color-creation-ink-275: #7589b6;
+	--color-creation-ink-250: #7a84a6;
+	--color-creation-ink-225: #7c8cb5;
+	--color-creation-ink-200: #8c98bc;
+	--color-creation-ink-100: #b4bccf;
+	/* The words on an outline button, a touch warmer than the ink. */
+	--color-creation-cancel: #1f1f47;
+
+	/* State: green for done and saved, red for delete, amber for "look at this". */
+	--color-creation-green: #0aa14d;
+	--color-creation-green-text: #08ad4f;
+	--color-creation-green-pill-text: #1f964d;
+	--color-creation-green-pill: #dffced;
+	--color-creation-green-tint: #e3faef;
+	--color-creation-red: #e5141c;
+	--color-creation-red-bright: #f80715;
+	--color-creation-red-icon: #ed424c;
+	--color-creation-red-tint: #fee3e4;
+	--color-creation-amber: #a96e34;
+	--color-creation-amber-tint: #fef4df;
+
+	/* The design's shadows: a breath under a panel, more under a pill, a menu and a dialog. */
+	--shadow-creation-panel: 0 1px 3px rgba(10, 15, 56, 0.04);
+	--shadow-creation-pill: 0 1px 2px rgba(10, 15, 56, 0.08);
+	--shadow-creation-menu: 0 12px 32px rgba(10, 15, 56, 0.12);
+	--shadow-creation-dialog: 0 24px 64px rgba(10, 15, 56, 0.28);
+}
+
+/*
+	`@layer base` holds the defaults for plain HTML elements. Tailwind puts this
+	layer before the utility classes, so any utility in the markup still wins.
+*/
+@layer base {
+	/*
+		How big one rem is. The type scale above and every Tailwind spacing class
+		(`p-4` is 1rem, `max-w-7xl` is 80rem) count in rem, so this one size sets
+		the scale of the whole page.
+
+		A phone and a tablet keep the browser's own size, normally 16px. From `lg`
+		(64rem, 1024px) up it grows with the window instead (Trello WMcXfry0):
+		without it the page kept the same pixels at every width, so it filled
+		half of a 2560px screen while a 1280px laptop saw little but the top of
+		it. `0.25rem + 0.78125vw` is 14px in a window 1280px wide and 16px at
+		1536px, the width the product owner's mockups are drawn at, so the page
+		keeps the mockup's proportions across desktop widths. The rem part keeps
+		a reader's own text size setting in the sum.
+
+		`clamp` keeps it between 14px and 24px, before `--page-scale` below. The largest is less than 2.5
+		times the smallest, so zooming the browser in can always at least double
+		the size of the words, which WCAG 1.4.4 asks for.
+
+		A media query's rem is always the browser's own size, not this one, so
+		`lg` and the other breakpoints stay where they were.
+
+		`--page-scale` multiplies all of it, on every screen. At 1 the page was
+		drawn about 10% smaller than people expected (a cofounder on a 1920 by
+		1200 screen asked for it 10% zoomed in), so it is 1.1: 17.6px on a phone,
+		15.4px at 1280px, 20.9px at 1920px. To make the whole site bigger or
+		smaller, change this number and nothing else; never scale a single
+		page, and never use CSS `zoom` or `transform: scale`, which throw off
+		where menus and popovers open. `tests/e2e/page-scale.spec.ts` holds it.
+	*/
+	:root {
+		--page-scale: 1.1;
+	}
+
+	html {
+		font-size: calc(1rem * var(--page-scale));
+	}
+
+	@media (min-width: 64rem) {
+		html {
+			font-size: calc(clamp(0.875rem, 0.25rem + 0.78125vw, 1.5rem) * var(--page-scale));
+		}
+	}
+
+	/*
+		Keeps room for the scrollbar on every page, even one too short to scroll.
+		On Windows and on Linux the scrollbar takes about 15px of the window, so a
+		long page such as `/home` or `/conferences` was 15px narrower than a short
+		one such as `/schedule`, and the centred top bar jumped sideways by half
+		of that when you moved between them (Trello V5hotx4V). Where scrollbars
+		float over the page and take no room, as on a Mac or a phone, this does
+		nothing.
+	*/
+	html {
+		scrollbar-gutter: stable;
+	}
+
+	/*
+		Lucide draws an icon at a fixed number of pixels, its `size`, written into
+		the SVG's `width` and `height`. These rules restate each size we use in
+		rem, so the icons grow with the words beside them. 1rem is 16px.
+	*/
+	svg.lucide-icon[width='10'] {
+		width: 0.625rem;
+		height: 0.625rem;
+	}
+
+	svg.lucide-icon[width='14'] {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	svg.lucide-icon[width='16'] {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	svg.lucide-icon[width='18'] {
+		width: 1.125rem;
+		height: 1.125rem;
+	}
+
+	svg.lucide-icon[width='20'] {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+
+	svg.lucide-icon[width='22'] {
+		width: 1.375rem;
+		height: 1.375rem;
+	}
+
+	svg.lucide-icon[width='24'] {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	svg.lucide-icon[width='26'] {
+		width: 1.625rem;
+		height: 1.625rem;
+	}
+
+	svg.lucide-icon[width='28'] {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	svg.lucide-icon[width='44'] {
+		width: 2.75rem;
+		height: 2.75rem;
+	}
+
+	/*
+		`app.html` loads the serif with its optical sizes, the shapes its designers
+		drew for each size of text: wider and sturdier when small, narrower and
+		finer when large. Browsers pick one to suit the size by themselves.
+		`'opsz' 14` holds every heading in the one shape the site was designed in,
+		the one the serif came in before it had optical sizes, and only the landing
+		page's headlines let the browser choose (Trello RBz46aTQ).
+
+		The page is white paper with black ink (docs/DESIGN.md), and both come
+		from the shadcn theme variables at the end of this file.
+	*/
+	body {
+		background-color: var(--background);
+		color: var(--foreground);
+		font-variation-settings: 'opsz' 14;
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		line-height: var(--text-body--line-height);
+	}
+
+	/*
+		The focus ring. `:focus-visible` is the browser's own judgement of when
+		somebody is navigating by keyboard, so a mouse click does not draw a ring
+		but the Tab key does. Never remove this: it is how a keyboard user knows
+		where they are. It is the logo's light blue, `brand-500`, because a ring
+		is a shape with no words on it.
+	*/
+	:focus-visible {
+		outline: 2px solid var(--color-brand-500);
+		outline-offset: 2px;
+	}
+
+	/*
+		Some people ask their operating system to keep movement to a minimum,
+		often because motion makes them ill. This turns every animation off for
+		them rather than making them sit through it.
+	*/
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+	* {
+		@apply border-border outline-ring/50;
+	}
+}
+
+/*
+	Fields are the exception to the focus ring above. `@tailwindcss/forms` hides
+	the outline on a focused input, select or text area and draws a thin ring of
+	its own, in Tailwind's stock blue rather than ours. `--tw-ring-color` is the
+	colour that ring is drawn in, so this paints it the same light blue.
+
+	It sits in `@layer components` rather than `@layer base` because the plugin
+	writes its own field styles into `base` after ours, and a later layer always
+	wins over an earlier one. Utility classes in the markup still win over both.
+*/
+@layer components {
+	input:focus,
+	select:focus,
+	textarea:focus {
+		--tw-ring-color: var(--color-brand-500);
+	}
+
+	/*
+		A file input gets no ring from the plugin, only a thin `outline: auto`
+		that wins over the 2px focus ring every other control has, so it is given
+		that ring here (the design system's accessibility baseline).
+	*/
+	input[type='file']:focus-visible {
+		outline: 2px solid var(--color-brand-500);
+		outline-offset: 2px;
+	}
+}
+/*
+	The shadcn-svelte theme. Every component in `src/lib/components/ui/` takes its
+	colours from these variables, so this is where docs/DESIGN.md's palette meets
+	the components: four colours with one job each, and red only for danger.
+	The `@theme` block above turns each one into a utility (`bg-primary`,
+	`text-muted-foreground`, `border-border`), which is how the markup names them.
+*/
+:root {
+	/* White: every surface. */
+	--background: #ffffff;
+	--foreground: #15171c;
+	--card: #ffffff;
+	--card-foreground: #15171c;
+	--popover: #ffffff;
+	--popover-foreground: #15171c;
+	/* Dark blue: the one action that matters. */
+	--primary: #0b2a5b;
+	--primary-foreground: #ffffff;
+	/* Black and its greys: everything people read, and the quiet fill. */
+	--secondary: #f4f5f7;
+	--secondary-foreground: #15171c;
+	--muted: #f4f5f7;
+	--muted-foreground: #5b616b;
+	/* Light blue tint: a row under the pointer, a chosen option, in dark blue text. */
+	--accent: #eef7ff;
+	--accent-foreground: #0b2a5b;
+	--destructive: #b91c1c;
+	/* Rules are the hairline grey; a field's border is one step darker so it reads on white. */
+	--border: #e4e6ea;
+	--input: #c9cdd3;
+	/* Light blue: the focus ring, a shape with no words on it. */
+	--ring: #0098fc;
+	/*
+		The rest of docs/DESIGN.md's palette, which shadcn has no variable for.
+		Link text is the light blue deepened for words on white. A chosen option is
+		the pale blue fill, with dark blue words (`accent-foreground`) on it.
+		Placeholder grey is for nothing that has to be read.
+	*/
+	--link: #006fcc;
+	--selected: #d9eeff;
+	--placeholder: #9ca1a9;
+	/* State: green, amber and red mean state and nothing else. Each `-muted` is the fill behind its words. */
+	--success: #15803d;
+	--success-muted: #dcfce7;
+	--warning: #b45309;
+	--warning-muted: #fef3c7;
+	--destructive-muted: #fee2e2;
+	/* Charts are not designed yet: ink and greys until they are. */
+	--chart-1: #15171c;
+	--chart-2: #5b616b;
+	--chart-3: #9ca1a9;
+	--chart-4: #c9cdd3;
+	--chart-5: #e4e6ea;
+	/* 6px on buttons, fields and badges. */
+	--radius: 0.375rem;
+	/* The organiser and chair sidebar: white, text links, the selected one in dark blue. */
+	--sidebar: #ffffff;
+	--sidebar-foreground: #15171c;
+	--sidebar-primary: #0b2a5b;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #eef7ff;
+	--sidebar-accent-foreground: #0b2a5b;
+	--sidebar-border: #e4e6ea;
+	--sidebar-ring: #0098fc;
+}
+
+/*
+	Type in design pixels for the steps of creating a conference: `fs-17` is a
+	17 pixel size in the product owner's design, `lh-24` its line. They count in
+	`--u`, one design pixel, which `.creation-root` below sets; outside it `--u`
+	is unset and they do nothing. `lh-*` also sets `--tw-leading`, the variable
+	Tailwind's own `text-sm` and friends read their line height from, so the two
+	can be mixed on one element.
+*/
+@utility fs-* {
+	font-size: calc(--value(number) * var(--u));
+}
+
+@utility lh-* {
+	--tw-leading: calc(--value(number) * var(--u));
+	line-height: calc(--value(number) * var(--u));
+}
+
+@layer components {
+	/*
+		The steps of creating a conference (Trello fe3reN7Y) are drawn one to one
+		from the product owner's designs, which are 1672 by 941 pixels. `--u` is
+		one pixel of that design. Every Tailwind spacing class inside counts in
+		it, four design pixels to a step, exactly as `p-4` is 16px elsewhere:
+		`h-10` is 40 design pixels tall, `w-253.75` is 1015 wide. `fs-*` and
+		`lh-*` above set type in design pixels, and Tailwind's own `text-sm` and
+		friends are restated in them below, so that a shadcn button or input
+		inside scales with everything else.
+
+		On a phone and a tablet a design pixel is a pixel and the columns stack.
+		From `lg` up it shrinks until the whole design fits the window: its 1672
+		pixels across, and its 905 pixels of height under the site's top bar
+		(4rem, `AppHeader`): the board's 875, plus the 30 the boards cut off at
+		their foot (the last panel's padding and the step's space before the
+		footer), whichever is the tighter fit; so the product owner's 1265 by
+		634 window shows every step whole, without scrolling. A window
+		wider than the design's 16:9 shape spreads the columns, which are set in
+		proportions, and nothing else.
+
+		A dialog is drawn in a portal at the end of `<body>`, outside the step,
+		so `DialogFrame` puts this class on the dialog itself as well.
+	*/
+	.creation-root {
+		--u: 1px;
+		--spacing: calc(4 * var(--u));
+		font-family: var(--font-creation);
+		font-size: calc(16 * var(--u));
+		line-height: 1.4;
+		color: var(--color-creation-ink-950);
+		-webkit-font-smoothing: antialiased;
+
+		/* The shadcn components inside read these, so a `Button` is the design's blue and a field has its border. */
+		--color-primary: var(--color-creation-blue);
+		--color-primary-foreground: #ffffff;
+		--color-foreground: var(--color-creation-ink-950);
+		--color-card-foreground: var(--color-creation-ink-950);
+		--color-popover-foreground: var(--color-creation-ink-950);
+		--color-muted: var(--color-creation-field);
+		--color-muted-foreground: var(--color-creation-ink-350);
+		--color-accent: var(--color-creation-hover);
+		--color-accent-foreground: var(--color-creation-ink-950);
+		--color-border: var(--color-creation-panel-border);
+		--color-input: var(--color-creation-input-border);
+		--color-ring: var(--color-creation-blue);
+		--color-link: var(--color-creation-blue);
+		--color-selected: var(--color-creation-selected);
+		--color-placeholder: var(--color-creation-ink-200);
+		--color-success: var(--color-creation-green);
+		--color-success-muted: var(--color-creation-green-pill);
+		--color-warning: var(--color-creation-amber);
+		--color-warning-muted: var(--color-creation-amber-tint);
+		--color-destructive: var(--color-creation-red);
+		--color-destructive-muted: var(--color-creation-red-tint);
+
+		/* The design's corners: 6 on a small thing, 8 on a button, 10 on a field or a note, 12 on a panel, 16 on a dialog. */
+		--radius-sm: calc(6 * var(--u));
+		--radius-md: calc(8 * var(--u));
+		--radius-lg: calc(10 * var(--u));
+		--radius-xl: calc(12 * var(--u));
+		--radius-2xl: calc(16 * var(--u));
+		--radius-3xl: calc(16 * var(--u));
+
+		/* Tailwind's type sizes, in design pixels. */
+		--text-xs: calc(12 * var(--u));
+		--text-xs--line-height: calc(16 * var(--u));
+		--text-sm: calc(14 * var(--u));
+		--text-sm--line-height: calc(20 * var(--u));
+		--text-base: calc(16 * var(--u));
+		--text-base--line-height: calc(24 * var(--u));
+		--text-lg: calc(18 * var(--u));
+		--text-lg--line-height: calc(28 * var(--u));
+		--text-xl: calc(20 * var(--u));
+		--text-xl--line-height: calc(28 * var(--u));
+		--text-2xl: calc(24 * var(--u));
+		--text-2xl--line-height: calc(32 * var(--u));
+	}
+
+	@media (min-width: 64rem) {
+		.creation-root {
+			/* Two pixels of slack, so that a height rounded up never shows a scrollbar. */
+			--u: min(100vw / 1672, (100dvh - 4rem - 2px) / 905);
+		}
+
+		/*
+			The Setup step is read rather than skimmed, so it is never shrunk to
+			fit the window's height: it takes the width's scale, capped at the
+			design's own size, and scrolls a little on a short window instead.
+			On a 1920 by 1080 window at 100% it is drawn at the design's own size.
+		*/
+		.creation-root.creation-root-scrolls {
+			--u: min(1px, 100vw / 1672);
+		}
+
+		/*
+			Setup's dialogs, and the lists and calendars they open, are drawn at
+			least as large as Setup itself: the product owner found them too
+			small at the height-fitted scale (0.63 on their 1265 by 634 window,
+			0.76 now). On a tall window they keep the larger height-fitted scale.
+			A dialog taller than the window scrolls inside itself (DialogFrame).
+		*/
+		.creation-root.creation-root-dialog {
+			--u: max(min(1px, 100vw / 1672), min(100vw / 1672, (100dvh - 4rem - 2px) / 905));
+		}
+	}
+
+	/* The dim behind a creation dialog, which shadcn draws beside the dialog rather than inside it. */
+	[data-slot='dialog-overlay']:has(+ .creation-root) {
+		background-color: var(--color-creation-overlay);
+		backdrop-filter: none;
+	}
+}
+
+@layer components {
+	/*
+		A draft resolution's or a directive's clauses, numbered the way a printed
+		resolution is (docs/committee-papers.md, section 4): the clauses 1, 2, 3,
+		their sub-clauses (a), (b), and theirs (i), (ii). `::marker` is the number
+		the browser draws before a list item, and `counter(list-item, …)` is that
+		item's own number written in letters or Roman numerals. The writer and
+		every page that reads the paper put this class around its text.
+	*/
+	.resolution-text ol ol > li::marker {
+		content: '(' counter(list-item, lower-alpha) ') ';
+	}
+
+	.resolution-text ol ol ol > li::marker {
+		content: '(' counter(list-item, lower-roman) ') ';
+	}
+}
+
+/*
+	A page sent to a printer, such as a passed paper's record copy
+	(`resolutions/[paperId]/print`). The sheet is not a window: the site's
+	scale and its growth with the window's width would print the words at
+	whatever size the screen had, so a printed page is drawn at the plain
+	16px rem the type sizes are set against, on A4 with 20mm margins.
+	Tailwind's `print:hidden` leaves the header, the footer and the buttons
+	off the sheet; `@page` has no Tailwind class, so it is written here.
+*/
+@media print {
+	:root {
+		--page-scale: 1;
+	}
+
+	html {
+		font-size: 1rem;
+	}
+}
+
+@page {
+	size: A4;
+	margin: 20mm;
+}

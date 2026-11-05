@@ -1,0 +1,24 @@
+-- =============================================================================
+-- Publish vote_entries to realtime (S2, D2)
+-- =============================================================================
+-- Contract: specs/02-architecture/realtime.md ("Tables published").
+--
+-- A roll call vote is one vote_entries row per seat that has answered. The
+-- table was not published, so a delegate's phone and the projector heard an
+-- answer only with the next change to some other table of the room
+-- (07-delivery/findings.md, "roll call votes reach delegates late").
+-- Publishing it lets the room's channel listen for the answers of the current
+-- vote, filtered on vote_id, since the table has no committee_id of its own
+-- (src/lib/committee-room-live.ts).
+--
+-- Row Level Security applies to realtime messages: the vote_entries select
+-- policy asks whether the reader can read the vote, so nobody hears an answer
+-- of a committee they cannot read. No replica identity full is needed, for the
+-- reason the first publication migration gives: nothing in the room is deleted
+-- while somebody watches, except a roll call answer the chair takes off again
+-- (clearRollCallChoice). A delete carries only the row's primary key, which
+-- here is (vote_id, seat_id), so the listener's vote_id filter still applies
+-- and the screens on that vote hear the answer go at once;
+-- client/tests/db/room-press-functions.test.ts records what a listener hears.
+
+alter publication supabase_realtime add table public.vote_entries;

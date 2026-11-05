@@ -1,0 +1,77 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install --frozen-lockfile)",
+      "Bash(pnpm build)",
+      "Bash(pnpm check)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm format)",
+      "Bash(pnpm house-rules)",
+      "Bash(pnpm verify)",
+      "Bash(pnpm verify:fast)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:scripts)",
+      "Bash(pnpm test:db:*)",
+      "Bash(pnpm test:e2e:*)",
+      "Bash(pnpm db:status)",
+      "Bash(pnpm db:start)",
+      "Bash(pnpm db:stop)",
+      "Bash(pnpm db:reset)",
+      "Bash(pnpm db:types)",
+      "Bash(pnpm exec svelte-check:*)",
+      "Bash(pnpm exec svelte-kit sync)",
+      "Bash(pnpm exec prettier:*)",
+      "Bash(pnpm exec eslint:*)",
+      "Bash(pnpm exec vitest run:*)",
+      "Bash(pnpm exec playwright test:*)",
+      "Bash(node .claude/scripts/trello.mjs:*)",
+      "Bash(node scripts/house-rules.mjs)",
+      "mcp__claude_ai_Trello__trelloReadCard",
+      "mcp__claude_ai_Trello__trelloReadList",
+      "mcp__claude_ai_Trello__trelloReadBoard",
+      "mcp__claude_ai_Trello__trelloWriteCard",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git for-each-ref:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git worktree:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git merge:*)",
+      "Read",
+      "Grep",
+      "Glob",
+      "Edit",
+      "Write"
+    ],
+    "deny": [
+      "Read(~/MunMeet/deploy/**)",
+      "Edit(~/MunMeet/deploy/**)",
+      "Read(//**/.env)",
+      "Read(//**/.env.*)",
+      "Edit(//**/.env)",
+      "Edit(//**/.env.*)",
+      "Read(~/.config/trello/**)",
+      "Edit(~/.config/trello/**)"
+    ]
+  },
+  "enabledPlugins": {
+    "svelte@svelte": true,
+    "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "svelte": {
+      "source": {
+        "source": "github",
+        "repo": "sveltejs/ai-tools"
+      }
+    }
+  }
+}

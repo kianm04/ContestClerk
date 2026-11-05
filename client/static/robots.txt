@@ -1,0 +1,6 @@
+# Everything is crawlable except the pages listed below.
+User-agent: *
+
+# The styleguide is a tool for the team, not a page for visitors. It is not
+# linked from any menu or footer, and it should not turn up in search results.
+Disallow: /styleguide

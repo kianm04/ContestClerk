@@ -1,0 +1,46 @@
+<!doctype html>
+<!--
+	The last-resort error page. `src/routes/+error.svelte` is drawn inside the
+	root layout, so it cannot be used when the root layout's own `load` fails,
+	for example when the database cannot be reached while the top bar is being
+	built. SvelteKit sends this plain file instead, filling in the two
+	`%sveltekit…%` placeholders. The message is the one `handleError` in
+	`src/hooks.server.ts` chose, so a raw error never shows here either.
+
+	Nothing of the app is loaded here, not even its stylesheet, which is why
+	the few styles it needs are written in this file.
+-->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Error %sveltekit.status% · MUNMeet</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 2rem 1rem;
+				font-family: system-ui, sans-serif;
+				color: #111318;
+				/*
+					A plain version of the app's wallpaper (see `src/routes/layout.css`):
+					white light in the top left corner fading into the pale blue `ground`.
+				*/
+				background: linear-gradient(160deg, #ffffff, #eef7ff 45%) fixed #eef7ff;
+			}
+			main {
+				max-width: 40rem;
+				margin: 0 auto;
+			}
+			a {
+				color: #006fcc;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<p>Error %sveltekit.status%</p>
+			<h1>%sveltekit.error.message%</h1>
+			<p><a href="/">Go to the home page</a></p>
+		</main>
+	</body>
+</html>

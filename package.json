@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "3.53.4-build1",
+    "@supabase/supabase-js": "^2.116.0"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-vercel": "^7.0.2"
+  }
+}

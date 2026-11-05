@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+	<rect width="512" height="512" fill="#eff6ff"/>
+	<clipPath id="shield"><path d="M136 92 H376 V262 C376 360 318 412 256 444 C194 412 136 360 136 262 Z"/></clipPath>
+	<path d="M136 92 H376 V262 C376 360 318 412 256 444 C194 412 136 360 136 262 Z" fill="#be123c"/>
+	<g clip-path="url(#shield)"><circle cx="256" cy="360" r="34" fill="none" stroke="#f8fafc" stroke-width="14"/></g>
+	<path d="M136 92 H376 V262 C376 360 318 412 256 444 C194 412 136 360 136 262 Z" fill="none" stroke="#f8fafc" stroke-width="10"/>
+	<text x="256" y="262" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="106" fill="#ffffff">TG</text>
+</svg>
