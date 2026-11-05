@@ -1,5 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-vercel';
 import type { KitConfig } from '@sveltejs/kit';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
@@ -121,11 +121,7 @@ export default defineConfig(({ mode }) => ({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			// The adapter decides what `pnpm build` produces. `adapter-node` writes a
-			// plain Node server to `build/`, which `node build` runs and which the
-			// Dockerfile beside this file ships. It replaced `adapter-auto`, which only
-			// knows how to build for Vercel, Netlify and Cloudflare Pages and fails
-			// with "Could not detect a supported production environment" anywhere else.
+			// The adapter turns `pnpm build` output into Vercel functions and static files.
 			adapter: adapter(),
 			// The Content-Security-Policy, written by SvelteKit into every page's
 			// headers. The function above says what it allows and why.
