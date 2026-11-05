@@ -60,3 +60,5 @@ During-event:
 Post-event
 - Release the photo album sets
 - Feedback form release# ContestClerk
+
+# ContestClerk
